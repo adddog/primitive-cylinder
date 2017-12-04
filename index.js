@@ -2,25 +2,31 @@ function createCylinderMesh(
   radiusTop,
   radiusBottom,
   height,
-  radialSegments,
   heightSegments,
-  points,
+  radialSegments,
+  points
 ) {
   var index = 0
   var indexOffset = 0
   var indexArray = []
 
+  heightSegments = Math.min(heightSegments, points.length - 2)
+
+  console.log("heightSegments", heightSegments)
+
   var capCount = 0
-  if (radiusTop > 0) {
+  /*  if (radiusTop > 0) {
     capCount++
   }
   if (radiusBottom > 0) {
     capCount++
-  }
+  }*/
 
-  var vertexCount = ((radialSegments + 1) * (points.length + 1)) +
-    ((radialSegments + 2) * capCount)
-  var cellCount = (radialSegments * points.length * 2) + (radialSegments * capCount)
+  var vertexCount =
+    (radialSegments + 1) * (heightSegments + 1) +
+    (radialSegments + 2) * capCount
+  var cellCount =
+    radialSegments * heightSegments * 2 + radialSegments * capCount
 
   var normals = new Array(vertexCount)
   var vertices = new Array(vertexCount)
@@ -30,9 +36,11 @@ function createCylinderMesh(
   var slope = (radiusBottom - radiusTop) / height
   var thetaLength = 2.0 * Math.PI
 
-  for (var y = 0; y <= points.length; y++) {
+  for (var y = 0; y <= heightSegments; y++) {
+    var sample = y * Math.floor((points.length - 1) / heightSegments)
     var indexRow = []
-    var v = points[y][1]//y / heightSegments
+    var v = y / heightSegments * height
+    var mod = points[sample][1]
     var radius = v * (radiusBottom - radiusTop) + radiusTop
 
     for (var x = 0; x <= radialSegments; x++) {
@@ -40,7 +48,12 @@ function createCylinderMesh(
       var theta = u * thetaLength
       var sinTheta = Math.sin(theta)
       var cosTheta = Math.cos(theta)
-      vertices[index] = [radius * sinTheta, -v * height + (height / 2), radius * cosTheta * points[y][2]]
+
+      vertices[index] = [
+        radius * sinTheta + mod ,
+        -v * height + height / 2,
+        radius * cosTheta + mod ,
+      ]
       normals[index] = [sinTheta, slope, cosTheta]
       uvs[index] = [u, 1 - v]
 
@@ -52,7 +65,7 @@ function createCylinderMesh(
   }
 
   for (var x = 0; x < radialSegments; x++) {
-    for (var y = 0; y < points.length; y++) {
+    for (var y = 0; y < heightSegments; y++) {
       var i1 = indexArray[y][x]
       var i2 = indexArray[y + 1][x]
       var i3 = indexArray[y + 1][x + 1]
@@ -68,11 +81,11 @@ function createCylinderMesh(
     }
   }
 
-  var generateCap = function (top) {
+  var generateCap = function(top) {
     var vertex = new Array(3).fill(0)
 
-    var radius = (top === true) ? radiusTop : radiusBottom
-    var sign = (top === true) ? 1 : -1
+    var radius = top === true ? radiusTop : radiusBottom
+    var sign = top === true ? 1 : -1
 
     var centerIndexStart = index
 
@@ -90,9 +103,13 @@ function createCylinderMesh(
       var theta = u * thetaLength
       var cosTheta = Math.cos(theta)
       var sinTheta = Math.sin(theta)
-      vertices[index] = [radius * sinTheta, height * sign / 2, radius * cosTheta]
+      vertices[index] = [
+        radius * sinTheta,
+        height * sign / 2,
+        radius * cosTheta,
+      ]
       normals[index] = [0, sign, 0]
-      uvs[index] = [(cosTheta * 0.5) + 0.5, (sinTheta * 0.5 * sign) + 0.5]
+      uvs[index] = [cosTheta * 0.5 + 0.5, sinTheta * 0.5 * sign + 0.5]
       index++
     }
 
@@ -100,7 +117,7 @@ function createCylinderMesh(
       var c = centerIndexStart + x
       var i = centerIndexEnd + x
 
-      if ( top === true ) {
+      if (top === true) {
         // face top
         cells[indexOffset] = [i, i + 1, c]
         indexOffset++
@@ -111,20 +128,20 @@ function createCylinderMesh(
       }
     }
   }
-
+  /*
   if (radiusTop > 0) {
     generateCap(true)
   }
 
   if (radiusBottom > 0) {
     generateCap(false)
-  }
+  }*/
 
   return {
     uvs: uvs,
     cells: cells,
     normals: normals,
-    positions: vertices
+    positions: vertices,
   }
 }
 
