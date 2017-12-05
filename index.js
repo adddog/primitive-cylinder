@@ -50,7 +50,7 @@ function createCylinderMesh(
       var cosTheta = Math.cos(theta)
 
       vertices[index] = [
-        radius * sinTheta + mod ,
+        radius * sinTheta + mod,
         -v * height + height / 2,
         radius * cosTheta + mod ,
       ]
